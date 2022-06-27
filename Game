@@ -1,21 +1,26 @@
 uses GraphABC,ABCObjects,ABCButtons;
+
 Const N = 10; //Поле N х N
       sz = 40; //Размер клетки
       d0 = 10; //Отступ от левого и верхнего края
       zz = 2; //Растояние между ячейками
-      NMines = 10; //Количество мин     
+      NMines = 10; //Количество мин 
+      
 Type OneCellField = record
         mine : boolean; //Есть ли мина
         fl : boolean; //Есть ли флажок
         neighbours : integer; //полож.-Сколько соседей; отриц - нужны для алгоритма трассировки - открытия пустых клеток
         click : boolean; //Была ли открыта       
-     end;     
+     end; 
+     
 Var BtNewGame : ButtonABC;
-    Cell : array[1..N, 1..N] of SquareABC;
-    Field : array[1..N, 1..N] of OneCellField;
-    c : shortint; //Для подсчета мин в соседних клетках
-    Opened : shortint; //Сколько флажков правильно поставленно
-    Nfl : Integer; //Количество поставленных флажков (для победы должно быть равно кол. мин)
+    Cell: array[1..N, 1..N] of SquareABC;
+    Field: array[1..N, 1..N] of OneCellField;
+    c: shortint; //Для подсчета мин в соседних клетках
+    Opened: shortint; //Сколько флажков правильно поставленно
+    Nfl: Integer; //Количество поставленных флажков (для победы должно быть равно кол. мин)
+    Mina: integer; // Кол. мин
+   
 Procedure CreateField;
 begin    
    for var y := 1 to N do
@@ -26,6 +31,7 @@ begin
          Cell[x, y].TextScale := 0.7;
       end;    
 end; 
+
 Procedure NewGame;
 var Rx, Ry : integer;
 begin
@@ -38,6 +44,10 @@ begin
          Cell[i, j].BorderColor := clBlue;
          Cell[i, j].Text := '';
          Cell[i, j].Color := clLightSeaGreen;
+         SetFontSize(12);
+         SetBrushColor(clWhite);
+         SetFontColor(clBlack);
+         textout(545,100,inttostr(Mina));
       end;    
    //Размещаем мины
    for var i := 1 to NMines do begin
@@ -76,7 +86,9 @@ begin
       end; 
       Opened := 0; //Кол. открытых мин
       Nfl := 0; //Кол. установленных флажков
+      Mina:= 10; //Кол. Мин
 end;
+
 Procedure OpenZero(fx, fy : integer);
 var fl :boolean;
     step, ii, jj : integer;
@@ -96,9 +108,10 @@ begin
                         jj := y + dy;
                         //Если не выходит за границы поля
                         if ((ii > 0) and (ii <= N) and (jj > 0) and (jj <= N)) then begin
-                           if Field[ii, jj].neighbours = 0 then begin
+                           if Field[ii, jj].neighbours = 0 then begin                            
                               Sleep(30); //Для анимации открывания клеток
                               Cell[ii, jj].Color := clLightYellow;
+                              Cell[ii, jj].Text := ' ';
                               Field[ii, jj].click := true;
                               Field[ii, jj].neighbours := step;
                               fl := false; //Была открыта клетка - ищем др.
@@ -117,6 +130,7 @@ begin
       step := step - 1;
    until fl;
 end;
+
 Procedure MouseDown(x, y, mb: integer);
 begin
    if ObjectUnderPoint(x,y)=nil then // Eсли мы щелкнули не на объекте, то не реагировать на мышь
@@ -135,14 +149,21 @@ begin
          clearwindow; 
       CreateField;//Создаем поле   
    btNewGame := ButtonABC.Create(535, d0, 100, 'Новая игра', clSkyBlue);
+ SetBrushColor(clWhite);
+   textout(435,100,'Кол-во флажков: ');
+   SetFontSize(12);
+   SetFontColor(clblack);
+   textout(545,100,inttostr(Mina));
    btNewGame.OnClick := NewGame;
-   NewGame;    
-      end;
+   NewGame; 
+   textout(545,100,inttostr(Mina));
+       end;
       end
       else begin
          //Если щелкнули по пустой клетке
          if (Field[fx, fy].neighbours = 0) then begin
             Cell[fx, fy].Color := clLightYellow;
+            Cell[fx,fy].Text := ' ';                               
             if Field[fx, fy].fl then Cell[fx, fy].Text := '';
             //Вызов процедуры раскрытия пустых полей
             OpenZero(fx, fy);
@@ -160,63 +181,87 @@ begin
              Field[fx, fy].fl := False;
                  Cell[fx,fy].Text := '';
                  Cell[fx, fy].Color := clLightSeaGreen;
-                 Nfl := Nfl - 1;
+                 Nfl := Nfl - 1;                
+                 Mina:= Mina+1;
+                 SetBrushColor(clWhite);
+                 SetFontColor(clWhite);
+                 SetBrushColor(clWhite);
+                 textout(545,100,inttostr(Mina+10));
+                 SetFontSize(12);
+                 SetFontColor(clblack);
+                 textout(545,100,inttostr(Mina));
+                  SetFontSize(12);
+                 SetFontColor(clblack);
+                 textout(545,100,inttostr(Mina)); 
+                 
                  if (Opened = NMines) and (Nfl = NMines) then writeln('Победа!');
                  //Window.Title := IntToStr(Nfl)+' M '+IntToStr(Opened);
             end
             else begin //Ставим флажок 
-             
-             If Nfl <10 then begin
-               
+             if  Cell[fx, fy].Text = '' then             
+             If Nfl <10 then begin              
                Field[fx, fy].fl := true;
                Cell[fx,fy].Text := 'F';
                Cell[fx, fy].Color := clBlue;
-               Nfl := Nfl + 1;
-               end;             
-               
-               
+               Nfl := Nfl + 1;                
+               Mina:= Mina-1;
+               SetBrushColor(clWhite);              
+                 SetFontColor(clWhite);
+                 SetBrushColor(clWhite);
+                 textout(545,100,inttostr(Mina+10));
+                SetFontSize(12);
+                 SetFontColor(clblack);     
+                 FontColor;
+               textout(545,100,inttostr(Mina));
+               end             
+               else begin
+                 Cell[fx,fy].Text := '';
+                 Cell[fx, fy].Color := clLightSeaGreen;                
+                 end;               
                //Window.Title := IntToStr(Nfl)+' M '+IntToStr(Opened);
             end;            
             if Field[fx, fy].mine then begin
                   if Field[fx, fy].fl then Opened += 1
                   else Opened -= 1;
                   Window.Title := IntToStr(Nfl)+' M '+IntToStr(Opened);
-                  if (Opened = NMines)  then 
-                     
- begin
-   textout(150,200,'Вы Выйграли!');
-   sleep(3000);
-   clearwindow;
-   CreateField;//Создаем поле   
-   btNewGame := ButtonABC.Create(535, d0, 100, 'Новая игра', clSkyBlue);
-   btNewGame.OnClick := NewGame;
-   NewGame;
-            end;
+                  if (Opened = NMines)  then begin 
+                    SetBrushColor(clLightGreen);  
+                     SetFontSize(18);                   
+                    textout(150,200,'Вы Выйграли!');
+                    sleep(3000);
+                    clearwindow;                    
+                    CreateField;//Создаем поле   
+                    btNewGame := ButtonABC.Create(535, d0, 100, 'Новая игра', clSkyBlue);
+                    SetBrushColor(clWhite);
+                    textout(435,100,'Кол-во флажков: ');
+                     SetFontSize(12);
+                     SetFontColor(ClBlack);
+                    textout(545,100,inttostr(Mina));
+                    btNewGame.OnClick := NewGame;
+                    NewGame;
+                    textout(545,100,inttostr(Mina));
+                    end;
+                  end;
     end;
 end;
-
- end;
  
 Procedure MouseMove(x, y, mb: integer);
 begin
    if ObjectUnderPoint(x,y)=nil then // Eсли мы щелкнули не на объекте, то не реагировать на мышь
     exit;
     var fx := (x-d0) div (sz+zz) + 1; // Вычислить координаты на доске для ячейки, на которой мы щелкнули мышью
-    var fy := (y-d0) div (sz+zz) + 1;
-    
+    var fy := (y-d0) div (sz+zz) + 1;    
     {Все клетки зеленые}
     for var j := 1 to N do
       for var i := 1 to N do begin
          if not Field[i,j].click then
             Cell[i,j].Color := clLightSeaGreen;
-      end; 
-    
+      end;     
     {Все клетки зеленые, а над которой мышка - ярко зеленая}
     if not Field[fx, fy].click then
       Cell[fx,fy].Color := clLightGreen;
 end;
-  
-  
+    
 BEGIN
    SetSmoothingOff; //Отключаем сглаживание
    Window.Title := 'Сапёр';
@@ -224,8 +269,15 @@ BEGIN
    
    CreateField;//Создаем поле   
    btNewGame := ButtonABC.Create(535, d0, 100, 'Новая игра', clSkyBlue);
+   setfontcolor(clBlack);
+   SetBrushColor(clWhite);
+   textout(435,100,'Кол-во флажков: ');
+   SetFontSize(12);                
+   textout(545,100,inttostr(Mina));
+   
    btNewGame.OnClick := NewGame;
    NewGame;
+   textout(545,100,inttostr(Mina));
    
    OnMouseDown := MouseDown;
    OnMouseMove := MouseMove;
